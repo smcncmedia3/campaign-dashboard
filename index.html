@@ -31450,7 +31450,7 @@ const CUE_TABS=[['summary','TV 미디어믹스'],['cue','큐시트'],['cal','큐
 const CUE={json:'',key:'',busy:false,frameKey:'',imp:null,impWait:null};
 const CUE_URL='cue.html';
 /* v184 — 큐시트 틀 주소는 버전만 붙인다. 달 · 탭은 # 뒤에 실어 같은 파일을 캐시에서 다시 쓴다(예전에는 캠페인마다 1.5MB 를 새로 받았다) */
-const CUE_VER='214';
+const CUE_VER='215';
 async function cuePipe(bytes,stream){
   const wr=stream.writable.getWriter();wr.write(bytes);wr.close();
   return new Uint8Array(await new Response(stream.readable).arrayBuffer());}
@@ -31786,10 +31786,10 @@ var ITEM_SEG=false;       // OTT 구분 필터를 이 줄이 걸었는가(떠날
 const ITEM_ALIAS={'카페얼음':'카페얼음정수기','아이콘얼음':'아이콘얼음정수기','음처기':'음식물처리기','스매':'스마트매트리스',
   '노블':'노블청정기','페스타':'코웨이페스타','트리플체어':'트리플체어2','마사지셋':'마사지셋/코어셋','코어셋':'마사지셋/코어셋'};
 function itemKey(n){const s=String(n==null?'':n).replace(/\s+/g,'');return ITEM_ALIAS[s]||s;}
-/* v214 — 품목 순서 통일: 환경가전(정수기 › 청정기 › 비데) › 비렉스(매트리스 › 안마의자 › 마사지) › 신사업 › 공통
+/* v214 — 품목 순서 통일(먼슬리 리포트와 같게): 환경가전(정수기 › 청정기 › 비데) › 비렉스(매트리스 › 안마의자 › 마사지) › 신사업 › 공통
    ITEM_CANON 에 있는 품목은 그 순서, 없는 품목은 이름으로 묶음을 짐작해 그 묶음 끝에, 묶음을 모르면 원래 순서 그대로 맨 뒤 */
-const ITEM_CANON=[['아이콘3','카페얼음정수기','아이콘얼음정수기','아이콘프로','노블청정기','히티브','비데'],
-  ['안마매트리스','스마트매트리스','트리플체어2','페블체어2','마사지셋/코어셋'],['음식물처리기','테라솔U'],['코웨이페스타']];
+const ITEM_CANON=[['아이콘프로','아이콘3','아이콘얼음정수기','카페얼음정수기','히티브','노블청정기','비데'],
+  ['스마트매트리스','안마매트리스','트리플체어2','페블체어2','마사지셋/코어셋'],['테라솔U','음식물처리기'],['코웨이페스타']];   /* v215 — 먼슬리 리포트(코웨이 TV 요약 품목 표) · 위클리 리포트 순서 */
 function itemGrp(n){const s=String(n==null?'':n).replace(/\s+/g,'');
   if(/정수기|얼음|아이콘|청정기|히티브|노블|비데/.test(s))return 0;
   if(/매트리스|스매|체어|안마|마사지|코어셋|비렉스/.test(s))return 1;
