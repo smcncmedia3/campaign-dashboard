@@ -12,6 +12,17 @@ var ITEM_SEG=false;       // OTT 구분 필터를 이 줄이 걸었는가(떠날
 const ITEM_ALIAS={'카페얼음':'카페얼음정수기','아이콘얼음':'아이콘얼음정수기','음처기':'음식물처리기','스매':'스마트매트리스',
   '노블':'노블청정기','페스타':'코웨이페스타','트리플체어':'트리플체어2','마사지셋':'마사지셋/코어셋','코어셋':'마사지셋/코어셋'};
 function itemKey(n){const s=String(n==null?'':n).replace(/\s+/g,'');return ITEM_ALIAS[s]||s;}
+/* v214 — 품목 순서 통일: 환경가전(정수기 › 청정기 › 비데) › 비렉스(매트리스 › 안마의자 › 마사지) › 신사업 › 공통
+   ITEM_CANON 에 있는 품목은 그 순서, 없는 품목은 이름으로 묶음을 짐작해 그 묶음 끝에, 묶음을 모르면 원래 순서 그대로 맨 뒤 */
+const ITEM_CANON=[['아이콘3','카페얼음정수기','아이콘얼음정수기','아이콘프로','노블청정기','히티브','비데'],
+  ['안마매트리스','스마트매트리스','트리플체어2','페블체어2','마사지셋/코어셋'],['음식물처리기','테라솔U'],['코웨이페스타']];
+function itemGrp(n){const s=String(n==null?'':n).replace(/\s+/g,'');
+  if(/정수기|얼음|아이콘|청정기|히티브|노블|비데/.test(s))return 0;
+  if(/매트리스|스매|체어|안마|마사지|코어셋|비렉스/.test(s))return 1;
+  if(/음식물|음처기|테라솔|요실금/.test(s))return 2;
+  if(/페스타|브랜드|공통/.test(s))return 3;return 9;}
+function itemRank(n){const k=itemKey(n);for(let g=0;g<ITEM_CANON.length;g++){const i=ITEM_CANON[g].indexOf(k);if(i>=0)return g*100+i;}return itemGrp(n)*100+90;}
+function itemSort(arr,nf){return (arr||[]).map((x,i)=>[x,i,itemRank(nf(x))]).sort((a,b)=>a[2]-b[2]||a[1]-b[1]).map(p=>p[0]);}
 function itemOn(n){return !!ITEM_SEL&&itemKey(n)===ITEM_SEL;}
 /* 리포트 업종 */
 function itemCat(k){
@@ -41,7 +52,7 @@ function itemList(){
     itemCueRows().forEach(r=>full[r[0]]=r[1]||r[0]);hd.forEach(h=>add(full[h]||h,'tv'));}}catch(e){}
   try{(LINES||[]).filter(l=>isOttMedia(l.media)).forEach(l=>add(l.segment,'ott'));}catch(e){}
   try{if(typeof RPT_DOC!=='undefined'&&RPT_DOC&&RPT_DOC.own){const o=RPT_DOC.own.find(x=>x.m===RPT_DOC.m);(o?o.it:[]).filter(x=>rN(x[1])>0).forEach(x=>add(x[0],'report'));}}catch(e){}
-  return [...m.values()];}
+  return itemSort([...m.values()],x=>x.k);}
 function itemBarPaint(){
   const h=$('itemBar');if(!h)return;const ar=itemAreaNow();
   const IL=ar?itemList():[];

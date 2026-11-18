@@ -187,7 +187,9 @@ function rpWrap(n){n=String(n||'');if(n.length<=5)return [n];
   const h=Math.ceil(n.length/2);return [n.slice(0,h),n.slice(h)];}
 function rpIso(){
   const box=$('rpIso');if(!box)return;const M=RPT_DOC.m,cur=(RPT_DOC.own||[]).find(o=>o.m===M);if(!cur)return;
-  const it=cur.it.filter(x=>rN(x[1])>0||rN(x[2])>0).sort((a,b)=>rN(b[1])-rN(a[1]));
+  /* v214 — 순서는 품목 순서 통일(환경가전 › 비렉스 › 신사업), 막대 명도는 금액 순위 그대로 */
+  const it=itemSort(cur.it.filter(x=>rN(x[1])>0||rN(x[2])>0),x=>x[0]);
+  const rkOf=(()=>{const o=it.slice().sort((a,b)=>rN(b[1])-rN(a[1]));return x=>o.indexOf(x);})();
   if(!it.length){box.innerHTML=`<div class="hint">${L('집행 품목 없음','No items')}</div>`;return;}
   const W=Math.max(520,box.clientWidth||620),H=360,n=it.length,pad=26,dx=0,dy=0,gap=(W-pad)/(n+.2),bw=Math.min(54,gap*.5),base=H-56,top=100;
   const mxB=Math.max(...it.map(x=>rN(x[1])))||1,mxE=Math.max(...it.map(x=>rN(x[2])))||1,mxR=Math.max(...it.map(x=>rN(x[3])))||1;
@@ -201,7 +203,7 @@ function rpIso(){
   /* ③ R3+ 꺾은선 — 막대 위쪽 띠에 */
   const ry=v=>22+(1-v/mxR)*54,rPts=it.map((x,i)=>[cxs[i],ry(rN(x[3]))]);
   let g='';
-  it.forEach((x,i)=>{const v=rN(x[1]),hh=Math.max(2,(base-top)*v/mxB),cx=pad+gap*(i+.2),col=PAL[Math.min(i,7)];
+  it.forEach((x,i)=>{const v=rN(x[1]),hh=Math.max(2,(base-top)*v/mxB),cx=pad+gap*(i+.2),col=PAL[Math.min(rkOf(x),7)];
     /* v155 — 2D 막대(위쪽만 둥글게) — 뒤 eq.GRP 영역과 같은 평면 */
     const rr=Math.min(5,hh/2),f=v2=>v2.toFixed(1);
     g+=`<g class="ib${itemOn(x[0])?' ion':''}" style="--d:${i*80}ms" data-tip="${i}"><path d="M${f(cx)},${f(base)} V${f(base-hh+rr)} Q${f(cx)},${f(base-hh)} ${f(cx+rr)},${f(base-hh)} H${f(cx+bw-rr)} Q${f(cx+bw)},${f(base-hh)} ${f(cx+bw)},${f(base-hh+rr)} V${f(base)} Z" fill="${col}"/></g>
@@ -221,9 +223,9 @@ function rpOwnTrend(){
   const box=$('rpOwnTr');if(!box)return;const own=RPT_DOC.own||[],M=RPT_DOC.m;
   /* v190 — 이 리포트보다 뒤의 달도 막대로: ownF = 뒤 달 리포트의 값(먼슬리가 아직 없는 달은 위클리 리포트 값, src:'wk' · part = 진행 중인 달의 기준일) */
   const fut=(RPT_DOC.ownF||[]).filter(z=>z&&z.m>M);
-  const bars=[...Array(12)].map((_,i)=>{const o=own.find(z=>z.m===i+1)||fut.find(z=>z.m===i+1);const it=o?(o.it||[]).filter(x=>rN(x[1])>0).sort((a,b)=>rN(b[1])-rN(a[1])):[];
+  const bars=[...Array(12)].map((_,i)=>{const o=own.find(z=>z.m===i+1)||fut.find(z=>z.m===i+1);const it0=o?(o.it||[]).filter(x=>rN(x[1])>0).sort((a,b)=>rN(b[1])-rN(a[1])):[],it=itemSort(it0,x=>x[0]);   /* v214 — 조각 순서 = 품목 순서 통일, 명도 = 금액 순위 */
     const f=!!o&&i+1>M,v=o?rN(o.t[0]):0,lab=L(`${i+1}월`,`M${i+1}`)+(o&&o.part?` (~${o.part})`:'');
-    const sl=it.map((x,j)=>({n:x[0],v:rN(x[1]),col:rpSteel(j,it.length),sub:x.length>5&&(rN(x[4])||rN(x[5]))?`${L('지상파','Terr.')} ${wrEok(x[4])} · ${L('케이블','Cable')} ${wrEok(x[5])}`:''}));
+    const sl=it.map((x,j)=>({n:x[0],v:rN(x[1]),col:rpSteel(it0.indexOf(x),it.length),sub:x.length>5&&(rN(x[4])||rN(x[5]))?`${L('지상파','Terr.')} ${wrEok(x[4])} · ${L('케이블','Cable')} ${wrEok(x[5])}`:''}));
     return {k:i+1,label:lab,lab,v,col:i+1===M?'#676769':f?'#c6c6c8':'#afafb1',
       slices:sl.length||!(v>0)?sl:[{n:o.part?L(`집행 중 · ${o.part}까지`,`in flight · to ${o.part}`):L('TV 전체','TV total'),v,col:rpSteel(0,1),sub:o.src==='wk'?L('위클리 리포트 기준','weekly report'):''}]};});
   rpBarDonut(box,bars,{H:340,cur:M-1,topLab:true});}

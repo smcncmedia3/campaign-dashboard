@@ -13,7 +13,7 @@ const CUE_TABS=[['summary','TV 미디어믹스'],['cue','큐시트'],['cal','큐
 const CUE={json:'',key:'',busy:false,frameKey:'',imp:null,impWait:null};
 const CUE_URL='cue.html';
 /* v184 — 큐시트 틀 주소는 버전만 붙인다. 달 · 탭은 # 뒤에 실어 같은 파일을 캐시에서 다시 쓴다(예전에는 캠페인마다 1.5MB 를 새로 받았다) */
-const CUE_VER='213';
+const CUE_VER='214';
 async function cuePipe(bytes,stream){
   const wr=stream.writable.getWriter();wr.write(bytes);wr.close();
   return new Uint8Array(await new Response(stream.readable).arrayBuffer());}
@@ -80,6 +80,7 @@ function cueMixData(){
       if(t>0){const m=meta[r[0]]||{g:'케이블',pp:r[0]};chs.push({g:m.g,ch:r[0],pp:m.pp,bud:t/1000});}});
     const items=hd.map((h,i)=>{const b=it[i]/1000,cs=cre[nz(h)]||[],ws=cs.reduce((s,x)=>s+x[1],0);
       return {n:h,fn:full[h]||h,cat:catm[h]||'',col:cOf(h)||undefined,sub:{bud:b},cr:cs.length&&ws>0?cs.map(x=>({n:x[0],bud:b*x[1]/ws})):[{n:h,bud:b}]};}).filter(x=>x.sub.bud>0);   /* v202 — 순서는 큐시트 예산 시트의 품목 순서 그대로(금액순 정렬 없앰) */
+    {const so=itemSort(items,x=>x.fn||x.n);items.length=0;items.push(...so);}   /* v214 — 품목 순서 통일(환경가전 › 비렉스 › 신사업) */
     return {items,tot:items.reduce((s,x)=>s+x.sub.bud,0),chs};}catch(e){return null;}}
 function cueTopPaint(){
   const el=$('cueTop');if(!el)return;

@@ -1446,6 +1446,7 @@ function tvFromDoc(d){
   TV_SEG=arr('seg');TV_WEEK=arr('week');TV_WKCH=arr('wkch');TV_WKRT=arr('wkrt');TV_WKSEG=arr('wkseg');TV_SEGCH=arr('segch');TV_SEGCR=arr('segcr');
   try{TV_MON=arr('mon');}catch(e){}
   try{TV_WR=(t&&t.wr&&typeof t.wr==='object')?t.wr:null;}catch(e){}
+  try{if(TV_WR&&Array.isArray(TV_WR.items))TV_WR.items=itemSort(TV_WR.items,x=>x.n);}catch(e){}   /* v214 — 품목 순서 통일 */
   try{TV_CUE=(t&&t.cue&&typeof t.cue==='object'&&t.cue.z)?t.cue:null;cueReset();}catch(e){}}
 
 /* ---------- 연결 ---------- */
