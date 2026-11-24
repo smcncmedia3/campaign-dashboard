@@ -1243,11 +1243,11 @@ async function saveCampOrder(ids){
   }catch(e){}
 }
 /* ---------- 공유 링크 (v130) ----------
-   캠페인 링크는 늘 대표 주소(dashboard.jintar.co.kr) 기준 — 예전 github.io 주소로 열어 둔 화면에서 복사해도 같은 주소.
+   캠페인 링크는 지금 열린 사이트 주소 기준(새 계정 사본) — 예전 github.io 주소로 열어 둔 화면에서 복사해도 같은 주소.
    (예전 주소는 GitHub 이 대표 주소로 넘겨 준다.) 파일 · localhost 로 열었을 때만 지금 주소를 쓴다. */
 const APP_URL=(()=>{try{const h=location.hostname;
-  if(location.protocol==='https:'&&h&&!/^(localhost|127\.)/.test(h))return 'https://dashboard.jintar.co.kr/';
-  return location.href.split('#')[0].split('?')[0];}catch(e){return 'https://dashboard.jintar.co.kr/';}})();
+  if(location.protocol==='https:'&&h&&!/^(localhost|127\.)/.test(h))return location.origin+location.pathname.replace(/[^/]*$/,'');
+  return location.href.split('#')[0].split('?')[0];}catch(e){return location.origin+'/';}})();
 const shareLink=code=>APP_URL+'?code='+encodeURIComponent(code);
 function shareMessage(c){
   const nm=(c.name||'').trim()||'캠페인',adv=(c.advertiser||'').trim();
