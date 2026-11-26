@@ -620,7 +620,7 @@ const rpImg=(id,t)=>`assets/cr/${id}${t?'_t':''}.jpg`;
 const rpImgC=(id,t)=>`assets/cr/ca/${id}${t?'_t':''}.jpg`;
 let RP_COMP=null,RP_COMP_P=null;
 function rpCompLoad(){if(RP_COMP)return Promise.resolve(RP_COMP);if(RP_COMP_P)return RP_COMP_P;
-  RP_COMP_P=fetch('assets/cr/comp.json',{cache:'force-cache'}).then(r=>r.ok?r.json():[]).catch(()=>[]).then(d=>(RP_COMP=Array.isArray(d)?d:[]));return RP_COMP_P;}
+  RP_COMP_P=fetch('assets/cr/comp.json?v='+encodeURIComponent(String(typeof BUILD!=='undefined'?BUILD:'').split(' ')[0]),{cache:'no-cache'}).then(r=>r.ok?r.json():[]).catch(()=>[]).then(d=>(RP_COMP=Array.isArray(d)?d:[]));return RP_COMP_P;}
 const RP_MEDK={'TVC':['t','c'],'신문':['n'],'잡지':['g'],'라디오':['r'],'인쇄':['n','g'],'신문 · 잡지':['n','g']};
 function rpArchItems(){
   const M=RPT_DOC.m,cats=RPT_DOC.cats||[];
