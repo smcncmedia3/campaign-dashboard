@@ -1254,6 +1254,9 @@ const shareLink=code=>APP_URL+'?code='+encodeURIComponent(code);
    같은 광고주의 모든 캠페인을 위 캠페인 고르기에서 옮겨 다닐 수 있다 (코드 권한은 서버가 광고주 단위로 묶는다) */
 const shareLinkAdv=code=>shareLink(code)+'&open=latest';
 var ADV_OPEN_LATEST=(()=>{try{return new URLSearchParams(location.search).get('open')==='latest';}catch(e){return false;}})();  /* 주소가 바뀌기 전에 읽어 둔다 */
+var ADV_OPEN_C=(()=>{try{return (new URLSearchParams(location.search).get('c')||'').trim().toLowerCase();}catch(e){return '';}})();   /* v218 — 공통 링크 + c=캠페인 키(아이디 앞 8자리) */
+const campKey=c=>String((c&&c.id)||'').slice(0,8);
+const shareLinkCamp=(code,c)=>shareLink(code)+'&c='+campKey(c);
 function advShareGroups(rows){
   const g=new Map();
   (rows||[]).forEach(c=>{const a=(c.advertiser||'').trim();if(!a||!c.share_code)return;
@@ -1261,14 +1264,20 @@ function advShareGroups(rows){
   /* 링크에 쓰는 코드 = 그 광고주의 가장 먼저 시작한 캠페인 (지워지지 않는 한 같은 링크가 유지된다) */
   return [...g.values()].map(e=>{const s=[...e.list].sort((a,b)=>String(a.start_date||'9').localeCompare(String(b.start_date||'9'))||String(a.id).localeCompare(String(b.id)));
     return {adv:e.adv,n:e.list.length,code:s[0].share_code};}).sort((a,b)=>a.adv.localeCompare(b.adv,'ko'));}
+/* 캠페인 링크도 광고주 공통 코드 + c=캠페인 키 (광고주가 없으면 그 캠페인 코드) */
+function campShareUrl(c){
+  const g=advShareGroups(CLOUD.list||[]).find(x=>x.adv.toLowerCase().replace(/\s+/g,' ')===String(c.advertiser||'').trim().toLowerCase().replace(/\s+/g,' '));
+  return g?shareLinkCamp(g.code,c):shareLink(c.share_code);}
 function shareMessageAdv(g){
   return `[${g.adv}] ${L('캠페인 대시보드','Campaign dashboard')}\n${shareLinkAdv(g.code)}\n`
     +L(`${g.adv}의 모든 캠페인을 이 링크 하나로 볼 수 있습니다(열면 진행 중인 캠페인부터). 보안 코드가 포함된 전용 링크이니 받으신 분만 열람해 주시고 외부로 전달하지 말아 주세요.`,
        `This one link opens every ${g.adv} campaign (starting with the current one). It includes a security code — please keep it to yourself and do not forward it.`);}
 /* 링크로 들어왔을 때 open=latest 면 진행 중인 캠페인으로 (처음 한 번만) */
 function advOpenLatest(code){
-  try{if(CLOUD.__advLatest||!ADV_OPEN_LATEST)return;CLOUD.__advLatest=1;
+  try{if(CLOUD.__advLatest||!(ADV_OPEN_LATEST||ADV_OPEN_C))return;CLOUD.__advLatest=1;
     const L2=(CLOUD.advList||[]).filter(x=>x&&x.code);if(L2.length<2)return;
+    if(ADV_OPEN_C){const hit=L2.find(x=>String(x.id||'').toLowerCase().startsWith(ADV_OPEN_C));
+      if(hit){if(hit.code!==code)switchByCode(hit.code);return;}}
     const t=(typeof todaySeoul==='function'?todaySeoul():new Date().toISOString().slice(0,10));
     const st=x=>String(x.start_date||''),en=x=>String(x.end_date||'');
     const run=L2.filter(x=>st(x)&&st(x)<=t&&(!en(x)||en(x)>=t)).sort((a,b)=>st(b).localeCompare(st(a)));
@@ -1278,9 +1287,9 @@ function advOpenLatest(code){
 function shareMessage(c){
   const nm=(c.name||'').trim()||'캠페인',adv=(c.advertiser||'').trim();
   return `${adv?`[${adv}] `:''}${nm} · ${L('캠페인 대시보드','Campaign dashboard')}\n`
-    +`${shareLink(c.share_code)}\n`
-    +L(`보안 코드(${c.share_code})가 포함된 전용 링크입니다. 받으신 분만 열람해 주시고 외부로 전달하지 말아 주세요.`,
-       `This private link includes a security code (${c.share_code}). Please keep it to yourself and do not forward it.`);}
+    +`${campShareUrl(c)}\n`
+    +L(`보안 코드가 포함된 전용 링크입니다. 받으신 분만 열람해 주시고 외부로 전달하지 말아 주세요.`,
+       `This private link includes a security code. Please keep it to yourself and do not forward it.`);}
 /* ---------- 캠페인 및 광고주 관리 (이름 변경 · 복제 · 삭제 · 광고주 로고) ---------- */
 /* inplace=true 면 이미 떠 있는 창의 본문만 갈아 끼운다 (창이 닫혔다 열리지 않게) */
 async function openCampManage(inplace){
@@ -1298,7 +1307,7 @@ async function openCampManage(inplace){
       코드 옆 <b>⧉</b>를 누르면 접속 링크가, <b>안내문</b>을 누르면 캠페인 이름 · 보안 링크 안내와 함께 복사됩니다. 링크로는 뷰어만 들어올 수 있습니다.`,
       `Each campaign gets a <b>viewer code</b> automatically — a link for viewing the dashboard and downloading Excel without signing in (read-only).
       Click <b>⧉</b> next to the code to copy its link, or <b>Message</b> to copy it with the campaign name and a security note. Links only give viewer access.`)}</div>`;
-  {const G=advShareGroups(rows);if(G.length)h+=`<div class="advlinks"><div class="hd">${L('광고주 링크 — 링크 하나로 그 광고주의 모든 캠페인 열람 (열면 진행 중인 캠페인부터)','Advertiser links — one link for all of that advertiser’s campaigns')}</div>${G.map((g,i)=>`<span class="al"><b>${esc(g.adv)}</b><small>${L(`캠페인 ${g.n}개`,`${g.n} campaigns`)}</small>
+  {const G=advShareGroups(rows);if(G.length)h+=`<div class="advlinks"><div class="hd">${L('광고주 공통 링크 — 열면 진행 중(없으면 가장 최근) 캠페인 · 아래 캠페인별 ⧉ 는 같은 코드에 캠페인만 지정(&c=)','Advertiser link — opens the current campaign; per-campaign ⧉ below uses the same code with &c=')}</div>${G.map((g,i)=>`<span class="al"><b>${esc(g.adv)}</b><small>${L(`캠페인 ${g.n}개`,`${g.n} campaigns`)}</small>
       <button class="copyb" data-advcopy="${i}" title="${L('광고주용 접속 링크만 복사합니다','Copy the advertiser link')}">⧉</button>
       <button class="copyb msg" data-advmsg="${i}" title="${L('안내문과 함께 복사합니다 — 카카오톡 · 메일에 그대로 붙여 넣으세요','Copy with a message')}">${L('안내문','Message')}</button></span>`).join('')}</div>`;}
   if(!rows.length)h+='<div class="card" style="padding:22px;text-align:center">아직 캠페인이 없습니다. 아래 <b>＋ 새 캠페인</b>으로 시작하세요.</div>';
@@ -1382,7 +1391,7 @@ async function openCampManage(inplace){
   host.querySelectorAll('[data-copy]').forEach(b=>b.onclick=async()=>{
     const c=CLOUD.list.find(x=>x.id===b.dataset.copy);if(!c)return;
     const code=c.share_code;if(!code)return;
-    const url=shareLink(code);
+    const url=campShareUrl(c);
     if(await copyText(url)){
       b.textContent='✓';b.classList.add('ok');
       setTimeout(()=>{b.textContent='⧉';b.classList.remove('ok');},1400);}
